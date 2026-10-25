@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Truck Dispatch — Demo</title>
+<style>
+:root{--bg:#f4f7fb;--panel:#fff;--ink:#172033;--muted:#64748b;--line:#e4eaf2;--nav:#101c35;--blue:#2563eb;--teal:#0f9f8f;--amber:#f59e0b;--red:#dc2626;--green:#15803d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif}
+header{background:linear-gradient(120deg,#101c35,#1d3b68);color:white;padding:22px 26px;display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
+header h1{margin:0;font-size:25px}header p{margin:7px 0 0;color:#d6e4ff;font-size:13px}
+.badge{background:#e6f8f4;color:#087f70;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:bold}
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 95px)}
+aside{background:var(--nav);padding:18px 12px;color:white}
+.navbtn{display:block;width:100%;text-align:right;border:0;border-radius:10px;background:transparent;color:#d7e1f2;padding:13px 14px;margin:4px 0;cursor:pointer;font-size:14px}
+.navbtn.active,.navbtn:hover{background:#263a5d;color:white}
+main{padding:24px;max-width:1500px;width:100%;margin:auto}
+.notice{background:#fff7e6;border:1px solid #f5d58b;border-radius:12px;padding:13px 16px;margin-bottom:18px;color:#7c4a03;font-size:13px;line-height:1.8}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:14px;margin-bottom:18px}
+.stat,.card{background:var(--panel);border:1px solid var(--line);border-radius:15px;box-shadow:0 3px 12px #10264a08}
+.stat{padding:18px}.stat .label{font-size:13px;color:var(--muted)}.stat .num{font-size:28px;font-weight:800;margin-top:10px}.stat small{color:var(--muted)}
+.grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}.card{padding:19px;margin-bottom:16px}
+.card h2{font-size:18px;margin:0 0 15px}.sub{font-size:12px;color:var(--muted);margin-top:-8px;margin-bottom:14px}
+form .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+label{display:block;font-size:12px;color:#526178;margin-bottom:6px}
+input,select,textarea{width:100%;border:1px solid #d8e1ed;border-radius:9px;padding:11px;background:white;font:inherit;font-size:13px;color:var(--ink)}
+textarea{min-height:75px;resize:vertical}
+button.primary,button.secondary,button.danger{border:0;border-radius:9px;padding:11px 15px;cursor:pointer;font-weight:bold;font-size:13px}
+.primary{background:var(--blue);color:white}.secondary{background:#eaf1ff;color:#1d4ed8}.danger{background:#fee2e2;color:#991b1b}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+table{border-collapse:collapse;width:100%;font-size:12px}th,td{padding:12px 9px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}th{color:#64748b;background:#f8fafc;font-weight:700}
+.pill{display:inline-block;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:bold;background:#e8f1ff;color:#1d4ed8}.pill.green{background:#dcfce7;color:#166534}.pill.yellow{background:#fef3c7;color:#92400e}.pill.gray{background:#e2e8f0;color:#475569}
+.empty{color:var(--muted);text-align:center;padding:25px 10px;font-size:13px}
+.hidden{display:none!important}.match{border:1px solid var(--line);padding:13px;border-radius:12px;margin-bottom:10px}.match strong{font-size:14px}.match .meta{color:var(--muted);font-size:12px;line-height:1.8;margin:7px 0}
+.kpi{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:11px 0;font-size:13px}.kpi:last-child{border:0}.muted{color:var(--muted)}
+.smallprint{font-size:11px;color:var(--muted);line-height:1.8}
+.toast{position:fixed;bottom:20px;left:20px;background:#10203b;color:white;padding:13px 18px;border-radius:10px;display:none;box-shadow:0 8px 30px #0002}
+@media(max-width:900px){.layout{grid-template-columns:1fr}aside{display:flex;overflow:auto;padding:8px}.navbtn{white-space:nowrap;width:auto}.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}main{padding:14px}}
+@media(max-width:500px){form .fields{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}header h1{font-size:20px}}
+</style>
+</head>
+<body>
+<header>
+ <div><h1>🚚 AI ٹرک ڈسپیچ</h1><p>ٹرک مالکان، لوڈ میچنگ اور ڈیلیوری مینجمنٹ — ابتدائی ڈیمو</p></div>
+ <span class="badge">ڈیمو موڈ · لائیو Facebook سے منسلک نہیں</span>
+</header>
+<div class="layout">
+<aside>
+ <button class="navbtn active" data-page="dashboard">📊 ڈیش بورڈ</button>
+ <button class="navbtn" data-page="carriers">🚐 ٹرک مالکان</button>
+ <button class="navbtn" data-page="loads">📦 لوڈز</button>
+ <button class="navbtn" data-page="matches">🔗 میچنگ</button>
+ <button class="navbtn" data-page="delivery">🛣️ ڈیلیوری ٹریکر</button>
+ <button class="navbtn" data-page="leadInbox">📥 پوسٹ اِن باکس</button>
+ <button class="navbtn" data-page="commissions">💵 کمیشن</button>
+ <button class="navbtn" data-page="integrations">🔌 اکاؤنٹ کنکشن</button>
+ <button class="navbtn" data-page="settings">⚙️ سیٹنگز اور گائیڈ</button>
+</aside>
+<main>
+<section id="dashboard" class="page">
+ <div class="notice"><b>اہم:</b> یہ چلنے والا مقامی ڈیمو ہے۔ یہ Facebook گروپس کو خود نہیں پڑھتا، پیغامات/کالز نہیں کرتا اور لوڈ بک نہیں کرتا۔ Facebook معلومات یہاں صرف دستی طور پر درج کریں۔ اصل خودکاری کے لیے منظور شدہ انٹیگریشن اور اجازت درکار ہوگی۔</div>
+ <div class="stats">
+  <div class="stat"><div class="label">ٹرک مالکان</div><div class="num" id="statCarriers">0</div><small>درج کیے گئے رابطے</small></div>
+  <div class="stat"><div class="label">لوڈز</div><div class="num" id="statLoads">0</div><small>درج کیے گئے مواقع</small></div>
+  <div class="stat"><div class="label">ممکنہ میچز</div><div class="num" id="statMatches">0</div><small>گاڑی اور روٹ کے مطابق</small></div>
+  <div class="stat"><div class="label">اندازاً 5% فیس</div><div class="num" id="statFee">$0</div><small>صرف درج لوڈز پر تخمینہ</small></div>
+ </div>
+ <div class="grid">
+  <div class="card"><h2>جلدی شروع کریں</h2><p class="muted">1) مالک درج کریں، 2) لوڈ درج کریں، 3) میچنگ چلائیں۔</p>
+   <div class="actions"><button class="primary" onclick="go('carriers')">+ ٹرک مالک درج کریں</button><button class="secondary" onclick="go('loads')">+ لوڈ درج کریں</button><button class="secondary" onclick="go('matches');runMatching()">میچنگ چلائیں</button></div>
+  </div>
+  <div class="card"><h2>کاروباری خلاصہ</h2><div class="kpi"><span>ڈسپیچ فیس</span><b>5%</b></div><div class="kpi"><span>ڈیٹا محفوظ</span><b>اسی براؤزر میں</b></div><div class="kpi"><span>Facebook رابطہ</span><b>ابھی دستیاب نہیں</b></div><p class="smallprint">یہ ڈیمو معلومات اسی کمپیوٹر/براؤزر میں محفوظ کرتا ہے۔ براؤزر ڈیٹا صاف کرنے سے ریکارڈ ختم ہو سکتے ہیں۔</p></div>
+ </div>
+ <div class="card"><h2>حالیہ سرگرمی</h2><div id="activity" class="empty">ابھی کوئی سرگرمی نہیں۔</div></div>
+</section>
+
+<section id="carriers" class="page hidden">
+ <div class="grid">
+  <div class="card"><h2>نیا ٹرک مالک / کیریئر</h2><p class="sub">Facebook سے ملنے والی تصدیق شدہ معلومات یہاں درج کریں۔</p>
+   <form id="carrierForm"><div class="fields">
+    <div><label>مالک / کمپنی کا نام *</label><input name="name" required placeholder="مثلاً ABC Transport"></div>
+    <div><label>فون یا رابطہ</label><input name="contact" placeholder="فون یا ای میل"></div>
+    <div><label>گاڑی کی قسم *</label><select name="vehicle" required><option value="">منتخب کریں</option><option>Cargo Van</option><option>Sprinter Van</option><option>Box Truck</option><option>Dry Van</option><option>Reefer</option><option>Flatbed</option><option>Other</option></select></div>
+    <div><label>موجودہ شہر / ریاست *</label><input name="location" required placeholder="Dallas, TX"></div>
+    <div><label>مطلوبہ منزل / روٹ</label><input name="route" placeholder="مثلاً TX, OK, LA"></div>
+    <div><label>کم از کم مطلوبہ ریٹ ($)</label><input name="rate" type="number" min="0" step="0.01" placeholder="350"></div>
+    <div><label>دستیابی</label><select name="availability"><option>آج</option><option>کل</option><option>اس ہفتے</option><option>تصدیق درکار</option></select></div>
+    <div><label>لیڈ کا ذریعہ</label><input name="source" placeholder="Facebook گروپ کا نام / پوسٹ"></div>
+   </div><div class="actions"><button class="primary">مالک محفوظ کریں</button></div></form>
+  </div>
+  <div class="card"><h2>AI کے لیے رابطے کے سوالات</h2><p class="muted">یہ سوالات مالک کو پیغام بھیجنے سے پہلے استعمال کیے جا سکتے ہیں۔</p><ol class="smallprint"><li>What type of vehicle do you operate?</li><li>What city is the vehicle in right now?</li><li>What lanes or destinations do you prefer?</li><li>What is your minimum rate?</li><li>When are you available?</li><li>Do you have the required insurance and operating documents?</li></ol><button class="secondary" onclick="copyQuestions()">سوالات کاپی کریں</button></div>
+ </div>
+ <div class="card"><h2>ٹرک مالکان کی فہرست</h2><div id="carrierTable"></div></div>
+</section>
+
+<section id="loads" class="page hidden">
+ <div class="grid">
+  <div class="card"><h2>نیا لوڈ درج کریں</h2><p class="sub">صرف ایسی معلومات درج کریں جن کی صحت اور استعمال کی اجازت کی تصدیق کر سکیں۔</p>
+   <form id="loadForm"><div class="fields">
+    <div><label>لوڈ / ریفرنس *</label><input name="title" required placeholder="مثلاً Pallet delivery"></div>
+    <div><label>گاڑی کی مطلوبہ قسم *</label><select name="vehicle" required><option value="">منتخب کریں</option><option>Cargo Van</option><option>Sprinter Van</option><option>Box Truck</option><option>Dry Van</option><option>Reefer</option><option>Flatbed</option><option>Other</option><option>Any</option></select></div>
+    <div><label>پک اَپ شہر *</label><input name="origin" required placeholder="Dallas, TX"></div>
+    <div><label>ڈیلیوری شہر *</label><input name="destination" required placeholder="Houston, TX"></div>
+    <div><label>پیش کردہ کرایہ ($) *</label><input name="rate" required type="number" min="0" step="0.01" placeholder="500"></div>
+    <div><label>پک اَپ وقت</label><input name="pickup" placeholder="آج / تاریخ اور وقت"></div>
+    <div><label>وزن / تفصیل</label><input name="details" placeholder="وزن، pallets، dimensions"></div>
+    <div><label>لیڈ کا ذریعہ</label><input name="source" placeholder="Facebook گروپ / پوسٹ"></div>
+   </div><div class="actions"><button class="primary">لوڈ محفوظ کریں</button></div></form>
+  </div>
+  <div class="card"><h2>لوڈ کی جانچ</h2><ul class="smallprint"><li>بکنگ سے پہلے لوڈ پوسٹ کرنے والے کی شناخت کی تصدیق کریں۔</li><li>ریٹ، پک اَپ، ڈیلیوری، وزن اور گاڑی کی شرائط تحریری طور پر واضح کریں۔</li><li>مشکوک پیشگی فیس یا غیر معمولی ادائیگی کی درخواستوں سے محتاط رہیں۔</li><li>لوڈ کی دستیابی کی آزادانہ تصدیق کے بغیر اسے کنفرم نہ سمجھیں۔</li></ul></div>
+ </div>
+ <div class="card"><h2>لوڈز کی فہرست</h2><div id="loadTable"></div></div>
+</section>
+
+<section id="matches" class="page hidden">
+ <div class="card"><h2>AI طرز کی میچنگ</h2><p class="sub">یہ بنیادی اصولوں پر مبنی میچنگ ہے، حقیقی AI یا لائیو Facebook سرچ نہیں۔</p><button class="primary" onclick="runMatching()">میچز دوبارہ تلاش کریں</button><div id="matchResults" style="margin-top:16px"></div></div>
+</section>
+
+<section id="delivery" class="page hidden">
+ <div class="card"><h2>ڈیلیوری ٹریکر</h2><p class="sub">ہر میچ کے اسٹیٹس کو دستی طور پر اپ ڈیٹ کریں۔</p><div id="deliveryTable"></div></div>
+</section>
+
+
+<section id="leadInbox" class="page hidden">
+ <div class="notice"><b>محفوظ طریقہ:</b> Facebook کا پاس ورڈ یہاں مت لکھیں۔ یہ اِن باکس Facebook سے خود پوسٹس نہیں پڑھتا؛ آپ کسی پوسٹ کا متن یہاں پیسٹ کریں، پھر اسے لیڈ کے طور پر محفوظ کرکے جائزہ لے سکتے ہیں۔</div>
+ <div class="grid">
+  <div class="card"><h2>Facebook پوسٹ سے لیڈ بنائیں</h2><p class="sub">گروپ کی اجازت کے مطابق دستیاب پوسٹ کا متن پیسٹ کریں۔ سسٹم بنیادی الفاظ سے ممکنہ روٹ، گاڑی اور ریٹ کی نشاندہی کرے گا؛ ہر چیز خود چیک کریں۔</p>
+   <form id="leadForm"><div class="fields">
+    <div><label>پوسٹ کی قسم</label><select name="kind"><option>ٹرک مالک / کیریئر</option><option>لوڈ کی پیشکش</option><option>تصدیق درکار</option></select></div>
+    <div><label>Facebook گروپ / ذریعہ</label><input name="source" placeholder="گروپ کا نام یا پوسٹ لنک"></div>
+    <div style="grid-column:1/-1"><label>پوسٹ کا متن *</label><textarea name="body" required placeholder="یہاں متعلقہ پوسٹ کا متن پیسٹ کریں…"></textarea></div>
+   </div><div class="actions"><button class="primary">لیڈ کا جائزہ بنائیں</button><button type="button" class="secondary" onclick="document.querySelector('#leadForm textarea').value=''">خالی کریں</button></div></form>
+  </div>
+  <div class="card"><h2>لیڈ کے اگلے اقدامات</h2><div class="kpi"><span>1. پوسٹ سے معلومات نکالیں</span><b>جائزہ</b></div><div class="kpi"><span>2. معلومات کی تصدیق کریں</span><b>آپ</b></div><div class="kpi"><span>3. مالک/لوڈ ریکارڈ میں شامل کریں</span><b>منظوری کے بعد</b></div><p class="smallprint">یہ ابتدائی متن پر مبنی مدد ہے، مکمل AI استخراج نہیں۔ یہ کسی کو خودکار پیغام نہیں بھیجتا۔</p></div>
+ </div>
+ <div class="card"><h2>لیڈ اِن باکس</h2><div id="leadTable"></div></div>
+</section>
+
+
+<section id="commissions" class="page hidden">
+ <div class="notice"><b>کمیشن ریکارڈ:</b> یہاں صرف حساب اور وصولی کا اسٹیٹس رکھا جاتا ہے۔ یہ بینک سے رقم وصول نہیں کرتا اور نہ ہی خودکار طور پر ادائیگی کرتا ہے۔</div>
+ <div class="stats">
+  <div class="stat"><div class="label">کل ممکنہ فیس</div><div class="num" id="commissionTotal">$0</div></div>
+  <div class="stat"><div class="label">وصول شدہ</div><div class="num" id="commissionPaid">$0</div></div>
+  <div class="stat"><div class="label">باقی وصولی</div><div class="num" id="commissionDue">$0</div></div>
+  <div class="stat"><div class="label">فیس کی شرح</div><div class="num" id="commissionRate">5%</div></div>
+ </div>
+ <div class="card"><h2>لوڈ کے حساب سے کمیشن</h2><p class="sub">فیس کی وصولی تبھی نشان زد کریں جب حقیقت میں ادائیگی موصول ہو جائے۔</p><div id="commissionTable"></div></div>
+</section>
+<section id="integrations" class="page hidden">
+ <div class="notice"><b>حقیقی اکاؤنٹ کنکشن ابھی فعال نہیں ہے۔</b> اس ڈیمو میں Facebook/Google لاگ اِن بٹن حقیقی OAuth کنکشن نہیں کر سکتے، کیونکہ اس کے لیے محفوظ سرور، ایپ کی شناخت، ری ڈائریکٹ سیٹنگز اور منظور شدہ اجازتیں درکار ہیں۔ یہاں اپنا پاس ورڈ یا کوڈ درج نہ کریں۔</div>
+ <div class="grid">
+  <div class="card"><h2>🔵 Facebook / Meta</h2><p><span class="pill yellow">منسلک نہیں</span></p><p class="smallprint">Facebook Login سے صرف لاگ اِن یا منظور شدہ ڈیٹا تک رسائی ملتی ہے۔ یہ خود بخود Facebook گروپس کی پوسٹس پڑھنے کی اجازت نہیں دیتا۔ Meta نے Groups API کو 22 اپریل 2024 سے ہٹا دیا تھا، اس لیے گروپوں کی مکمل خودکار سرچ کا آفیشل API راستہ عام طور پر دستیاب نہیں۔</p><div class="actions"><button class="primary" onclick="window.open('https://developers.facebook.com/','_blank','noopener')">Meta Developer Setup کھولیں</button></div><p class="smallprint">یہ صرف سرکاری سیٹ اپ صفحہ کھولتا ہے، اکاؤنٹ کنیکٹ نہیں کرتا۔</p></div>
+  <div class="card"><h2>🔴 Google</h2><p><span class="pill yellow">منسلک نہیں</span></p><p class="smallprint">Google Login بعد میں ویب سائٹ کے محفوظ ڈیش بورڈ میں لاگ اِن کے لیے استعمال ہو سکتا ہے۔ لیکن Google اکاؤنٹ جوڑنے سے Facebook گروپس تک رسائی نہیں ملتی۔ حقیقی Google OAuth کے لیے ویب ایپ اور محفوظ سرور کی سیٹنگز ضروری ہیں۔</p><div class="actions"><button class="secondary" onclick="window.open('https://console.cloud.google.com/','_blank','noopener')">Google Cloud Console کھولیں</button></div><p class="smallprint">یہ صرف سیٹ اپ صفحہ ہے، لاگ اِن کنکشن نہیں۔</p></div>
+ </div>
+ <div class="card"><h2>آٹومیشن کی حالت</h2>
+  <div class="kpi"><span>Facebook گروپس کی خودکار سرچ</span><b>دستیاب نہیں / متبادل درکار</b></div>
+  <div class="kpi"><span>مالک اور لوڈ کی بنیادی میچنگ</span><b>اس ڈیمو میں دستیاب</b></div>
+  <div class="kpi"><span>خودکار کال یا میسج</span><b>ابھی فعال نہیں</b></div>
+  <div class="kpi"><span>ڈیلیوری اسٹیٹس</span><b>دستی اپ ڈیٹ</b></div>
+  <div class="kpi"><span>بینک/ادائیگی وصولی</span><b>ابھی فعال نہیں</b></div>
+ </div>
+</section>
+
+<section id="settings" class="page hidden">
+ <div class="grid">
+  <div class="card"><h2>ڈیمو سیٹنگز</h2><div class="fields">
+   <div><label>ڈسپیچ فیس (%)</label><input id="feeRate" type="number" min="0" max="100" step="0.5" value="5"></div>
+   <div><label>کاروبار کا نام</label><input id="businessName" placeholder="Your Dispatch Service"></div>
+  </div><div class="actions"><button class="primary" onclick="saveSettings()">سیٹنگز محفوظ کریں</button><button class="secondary" onclick="exportCSV()">CSV ایکسپورٹ</button><button class="danger" onclick="resetData()">تمام ڈیمو ڈیٹا مٹائیں</button></div></div>
+  <div class="card"><h2>حقیقی خودکاری کے لیے ضروری چیزیں</h2><ol class="smallprint"><li>Facebook/Meta کی موجودہ اجازت یافتہ انٹیگریشن یا منظور شدہ ڈیٹا سورس۔</li><li>محفوظ لاگ اِن؛ پاس ورڈ جمع یا شیئر نہ کریں۔</li><li>اگر کال یا خودکار پیغام بھیجنا ہو تو مجاز کمیونیکیشن سروس اور متعلقہ قوانین کی پابندی۔</li><li>لوڈ کی تصدیق، کیریئر معاہدہ، ادائیگی اور قانونی کردار کی جانچ۔</li><li>لائیو سسٹم کے لیے محفوظ سرور، بیک اپ، صارف اجازتیں اور لاگنگ۔</li></ol></div>
+ </div>
+ <div class="card"><h2>استعمال کا طریقہ</h2><p class="smallprint">یہ ایک واحد HTML فائل ہے۔ اسے کمپیوٹر پر محفوظ کرکے Chrome یا Edge میں کھولیں۔ یہ ریکارڈ اسی براؤزر میں محفوظ کرتا ہے، اس لیے حساس معلومات درج نہ کریں۔ یہ تیار شدہ لائیو سروس یا قابلِ تنصیب Windows پروگرام نہیں ہے۔</p></div>
+</section>
+</main>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+const KEY='dispatch_demo_v2';
+let db=JSON.parse(localStorage.getItem(KEY)||'{"carriers":[],"loads":[],"matches":[],"leads":[],"activity":[],"settings":{"fee":5,"business":""}}');
+if(!Array.isArray(db.leads)) db.leads=[];
+function save(){localStorage.setItem(KEY,JSON.stringify(db));renderAll()}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function money(n){return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(Number(n)||0)}
+function toast(t){let el=document.getElementById('toast');el.textContent=t;el.style.display='block';setTimeout(()=>el.style.display='none',2600)}
+function log(t){db.activity.unshift({text:t,date:new Date().toLocaleString()});db.activity=db.activity.slice(0,12)}
+function go(id){document.querySelectorAll('.page').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.querySelectorAll('.navbtn').forEach(x=>x.classList.toggle('active',x.dataset.page===id));renderAll()}
+document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>go(b.dataset.page));
+document.getElementById('carrierForm').addEventListener('submit',e=>{e.preventDefault();let x=Object.fromEntries(new FormData(e.target));x.id=Date.now();db.carriers.push(x);log('نیا ٹرک مالک محفوظ کیا: '+x.name);e.target.reset();save();toast('ٹرک مالک محفوظ ہوگیا')});
+document.getElementById('loadForm').addEventListener('submit',e=>{e.preventDefault();let x=Object.fromEntries(new FormData(e.target));x.id=Date.now();x.status='نیا';db.loads.push(x);log('نیا لوڈ محفوظ کیا: '+x.title);e.target.reset();save();toast('لوڈ محفوظ ہوگیا')});
+function deleteItem(type,id){if(!confirm('کیا آپ یہ ریکارڈ حذف کرنا چاہتے ہیں؟'))return;db[type]=db[type].filter(x=>x.id!==id);if(type==='carriers'||type==='loads')db.matches=[];save()}
+function table(headers,rows){if(!rows.length)return '<div class="empty">ابھی کوئی ریکارڈ موجود نہیں۔</div>';return '<div style="overflow:auto"><table><thead><tr>'+headers.map(x=>'<th>'+x+'</th>').join('')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>'}
+function renderCarriers(){document.getElementById('carrierTable').innerHTML=table(['نام / کمپنی','گاڑی','مقام','روٹ / ریٹ','دستیابی',''],db.carriers.map(c=>`<tr><td><b>${esc(c.name)}</b><br><span class="muted">${esc(c.contact)}</span><br><span class="muted">${esc(c.source)}</span></td><td>${esc(c.vehicle)}</td><td>${esc(c.location)}</td><td>${esc(c.route||'—')}<br>${c.rate?money(c.rate):'ریٹ درکار'}</td><td><span class="pill">${esc(c.availability)}</span></td><td><button class="danger" onclick="deleteItem('carriers',${c.id})">حذف</button></td></tr>`))}
+function renderLoads(){document.getElementById('loadTable').innerHTML=table(['لوڈ','گاڑی','روٹ','ریٹ','پک اَپ / تفصیل',''],db.loads.map(l=>`<tr><td><b>${esc(l.title)}</b><br><span class="muted">${esc(l.source)}</span></td><td>${esc(l.vehicle)}</td><td>${esc(l.origin)} → ${esc(l.destination)}</td><td><b>${money(l.rate)}</b><br><span class="muted">5%: ${money(l.rate*(Number(db.settings.fee)||5)/100)}</span></td><td>${esc(l.pickup||'—')}<br>${esc(l.details||'')}</td><td><button class="danger" onclick="deleteItem('loads',${l.id})">حذف</button></td></tr>`))}
+
+document.getElementById('leadForm').addEventListener('submit',e=>{
+ e.preventDefault();
+ let f=Object.fromEntries(new FormData(e.target));
+ const text=f.body||'';
+ const vehicleWords=['Cargo Van','Sprinter Van','Box Truck','Dry Van','Reefer','Flatbed'];
+ const vehicle=vehicleWords.find(v=>text.toLowerCase().includes(v.toLowerCase()))||'تصدیق درکار';
+ const rateMatch=text.match(/\$\s?([\d,]+(?:\.\d{1,2})?)/);
+ const cities=text.match(/\b(?:from|pickup|pick up|in|at)\s+([A-Z][a-zA-Z .'-]{2,25})/i);
+ const destination=text.match(/\b(?:to|deliver(?:y)?\s+to|going to)\s+([A-Z][a-zA-Z .'-]{2,25})/i);
+ db.leads.unshift({id:Date.now(),kind:f.kind,source:f.source,body:text,vehicle,rate:rateMatch?rateMatch[1].replace(/,/g,''):'',origin:cities?cities[1].trim():'',destination:destination?destination[1].trim():'',status:'جائزہ درکار',date:new Date().toLocaleString()});
+ log('Facebook پوسٹ اِن باکس میں نئی لیڈ شامل کی گئی');
+ e.target.reset();save();toast('لیڈ محفوظ ہوگئی؛ معلومات کی تصدیق کریں');
+});
+function promoteLead(id){
+ const lead=db.leads.find(x=>x.id===id);if(!lead)return;
+ if(lead.kind==='ٹرک مالک / کیریئر'){
+  const name=prompt('مالک / کمپنی کا نام درج کریں:');if(!name)return;
+  db.carriers.push({id:Date.now(),name,contact:'',vehicle:lead.vehicle==='تصدیق درکار'?'Other':lead.vehicle,location:lead.origin||'تصدیق درکار',route:lead.destination||'',rate:'',availability:'تصدیق درکار',source:lead.source||'Facebook پوسٹ'});
+ } else if(lead.kind==='لوڈ کی پیشکش'){
+  const title=prompt('لوڈ کا نام / ریفرنس درج کریں:');if(!title)return;
+  const rate=Number(lead.rate)||Number(prompt('لوڈ کا کرایہ ($) درج کریں:')||0);
+  db.loads.push({id:Date.now(),title,vehicle:lead.vehicle==='تصدیق درکار'?'Any':lead.vehicle,origin:lead.origin||'تصدیق درکار',destination:lead.destination||'تصدیق درکار',rate,pickup:'تصدیق درکار',details:lead.body,source:lead.source||'Facebook پوسٹ',status:'نیا'});
+ } else {toast('پہلے پوسٹ کی قسم منتخب کریں یا اسے تصدیق کریں');return}
+ lead.status='ریکارڈ میں شامل';log('لیڈ کو ریکارڈ میں شامل کیا گیا');save();toast('ریکارڈ میں شامل ہوگیا');
+}
+function dismissLead(id){const l=db.leads.find(x=>x.id===id);if(l)l.status='نظر انداز';save()}
+
+function toggleCommission(id){
+ const l=db.loads.find(x=>x.id===id);if(!l)return;
+ l.commissionPaid=!l.commissionPaid;
+ log('کمیشن وصولی اسٹیٹس: '+l.title+' — '+(l.commissionPaid?'وصول ہوگیا':'باقی ہے'));
+ save();toast(l.commissionPaid?'وصول شدہ نشان زد ہوگیا':'باقی وصولی نشان زد ہوگئی');
+}
+function renderCommissions(){
+ const fee=(Number(db.settings.fee)||5)/100;
+ const total=db.loads.reduce((s,l)=>s+(Number(l.rate)||0)*fee,0);
+ const paid=db.loads.filter(l=>l.commissionPaid).reduce((s,l)=>s+(Number(l.rate)||0)*fee,0);
+ const due=total-paid;
+ const set=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val};
+ set('commissionTotal',money(total));set('commissionPaid',money(paid));set('commissionDue',money(due));set('commissionRate',(Number(db.settings.fee)||5)+'%');
+ const root=document.getElementById('commissionTable');if(!root)return;
+ root.innerHTML=table(['لوڈ / روٹ','لوڈ ریٹ','کمیشن','وصولی','اقدام'],db.loads.map(l=>`<tr><td><b>${esc(l.title)}</b><br>${esc(l.origin)} → ${esc(l.destination)}</td><td>${money(l.rate)}</td><td><b>${money((Number(l.rate)||0)*fee)}</b></td><td><span class="pill ${l.commissionPaid?'green':'yellow'}">${l.commissionPaid?'وصول ہوگیا':'باقی ہے'}</span></td><td><button class="${l.commissionPaid?'secondary':'primary'}" onclick="toggleCommission(${l.id})">${l.commissionPaid?'باقی نشان زد کریں':'وصولی درج کریں'}</button></td></tr>`));
+}
+function renderLeads(){
+ const root=document.getElementById('leadTable');if(!root)return;
+ root.innerHTML=table(['قسم / ذریعہ','پوسٹ کا متن','ممکنہ معلومات','اسٹیٹس','اقدام'],db.leads.map(l=>`<tr><td><b>${esc(l.kind)}</b><br><span class="muted">${esc(l.source||'ذریعہ درج نہیں')}</span><br><small>${esc(l.date)}</small></td><td style="min-width:230px;max-width:340px;white-space:pre-wrap">${esc(l.body)}</td><td>گاڑی: ${esc(l.vehicle)}<br>ممکنہ پک اَپ: ${esc(l.origin||'—')}<br>ممکنہ منزل: ${esc(l.destination||'—')}<br>ممکنہ ریٹ: ${l.rate?money(l.rate):'—'}</td><td><span class="pill yellow">${esc(l.status)}</span></td><td><div class="actions"><button class="secondary" onclick="promoteLead(${l.id})">ریکارڈ میں شامل کریں</button><button class="danger" onclick="dismissLead(${l.id})">نظر انداز</button></div></td></tr>`));
+}
+
+function runMatching(){let matches=[];for(const l of db.loads){for(const c of db.carriers){let vehicle=(l.vehicle==='Any'||l.vehicle===c.vehicle);let origin=(c.location||'').toLowerCase().split(',')[0].trim();let loadOrigin=(l.origin||'').toLowerCase().split(',')[0].trim();let loc=origin&&loadOrigin&&(origin===loadOrigin||origin.includes(loadOrigin)||loadOrigin.includes(origin));let route=(c.route||'').toLowerCase();let dest=(l.destination||'').toLowerCase();let routeOk=!route||route.includes(dest.split(',')[0].trim())||dest.includes(route.split(',')[0].trim());let score=(vehicle?50:0)+(loc?30:0)+(routeOk?20:0);if(score>=50)matches.push({id:l.id+'-'+c.id,loadId:l.id,carrierId:c.id,score,vehicle,loc,routeOk,status:'ممکنہ میچ'})}}db.matches=matches;log('میچنگ چلائی: '+matches.length+' ممکنہ میچ');save();document.getElementById('matchResults').innerHTML=matches.length?matches.map(m=>{let l=db.loads.find(x=>x.id===m.loadId),c=db.carriers.find(x=>x.id===m.carrierId);return `<div class="match"><strong>${esc(c.name)} ↔ ${esc(l.title)}</strong><div class="meta">گاڑی: ${esc(c.vehicle)} | ${esc(c.location)} → ${esc(l.destination)}<br>لوڈ ریٹ: ${money(l.rate)} | اندازاً 5% فیس: ${money(l.rate*(Number(db.settings.fee)||5)/100)}<br>میچ اسکور: ${m.score}% — صرف ابتدائی اشارہ، حتمی تصدیق نہیں۔</div><div class="actions"><button class="secondary" onclick="copyMessage(${m.carrierId},${m.loadId})">مالک کے لیے پیغام تیار کریں</button><button class="primary" onclick="setStatus('${m.id}','منظوری درکار')">منظوری کے لیے نشان لگائیں</button></div><div id="msg-${m.id}" class="smallprint"></div></div>`}).join(''):'<div class="empty">ابھی کوئی میچ نہیں۔ پہلے ٹرک مالک اور لوڈ درج کریں، پھر میچنگ چلائیں۔'}
+function setStatus(id,status){let m=db.matches.find(x=>x.id===id);if(m)m.status=status;log('میچ اسٹیٹس اپ ڈیٹ کیا: '+status);save();renderDelivery();toast('اسٹیٹس اپ ڈیٹ ہوگیا')}
+function copyMessage(cid,lid){let c=db.carriers.find(x=>x.id===cid),l=db.loads.find(x=>x.id===lid);let msg=`Hi ${c.name}, I saw your post about your ${c.vehicle}. I may have a load from ${l.origin} to ${l.destination} paying ${money(l.rate)}. Are you available, and does this rate work for you? Please confirm your vehicle details and availability. This is an inquiry only, not a confirmed booking.`;navigator.clipboard?.writeText(msg);toast('انگریزی پیغام تیار/کاپی ہوگیا');return msg}
+function renderDelivery(){let ms=db.matches;document.getElementById('deliveryTable').innerHTML=table(['مالک','لوڈ / روٹ','ریٹ','اسٹیٹس','اقدام'],ms.map(m=>{let c=db.carriers.find(x=>x.id===m.carrierId),l=db.loads.find(x=>x.id===m.loadId);if(!c||!l)return '';return `<tr><td>${esc(c.name)}</td><td>${esc(l.title)}<br>${esc(l.origin)} → ${esc(l.destination)}</td><td>${money(l.rate)}</td><td><span class="pill yellow">${esc(m.status||'ممکنہ میچ')}</span></td><td><select onchange="setStatus('${m.id}',this.value)"><option ${m.status==='ممکنہ میچ'?'selected':''}>ممکنہ میچ</option><option ${m.status==='منظوری درکار'?'selected':''}>منظوری درکار</option><option ${m.status==='مالک سے رابطہ'?'selected':''}>مالک سے رابطہ</option><option ${m.status==='ریٹ کی تصدیق'?'selected':''}>ریٹ کی تصدیق</option><option ${m.status==='بکنگ منظور'?'selected':''}>بکنگ منظور</option><option ${m.status==='پک اَپ مکمل'?'selected':''}>پک اَپ مکمل</option><option ${m.status==='ڈیلیور ہوگیا'?'selected':''}>ڈیلیور ہوگیا</option><option ${m.status==='منسوخ'?'selected':''}>منسوخ</option></select></td></tr>`}).filter(Boolean))}
+function renderAll(){renderLeads();renderCommissions();document.getElementById('statCarriers').textContent=db.carriers.length;document.getElementById('statLoads').textContent=db.loads.length;document.getElementById('statMatches').textContent=db.matches.length;document.getElementById('statFee').textContent=money(db.loads.reduce((s,l)=>s+(Number(l.rate)||0),0)*(Number(db.settings.fee)||5)/100);renderCarriers();renderLoads();renderDelivery();document.getElementById('activity').innerHTML=db.activity.length?db.activity.map(a=>`<div class="kpi"><span>${esc(a.text)}</span><small class="muted">${esc(a.date)}</small></div>`).join(''):'ابھی کوئی سرگرمی نہیں۔';document.getElementById('feeRate').value=db.settings.fee;document.getElementById('businessName').value=db.settings.business||''}
+function saveSettings(){db.settings.fee=Number(document.getElementById('feeRate').value)||5;db.settings.business=document.getElementById('businessName').value;save();toast('سیٹنگز محفوظ ہوگئیں')}
+function exportCSV(){let rows=[['Type','Name/Title','Vehicle','Location/Origin','Route/Destination','Rate','Contact/Source']];db.carriers.forEach(c=>rows.push(['Carrier',c.name,c.vehicle,c.location,c.route,c.rate,c.contact+' '+c.source]));db.loads.forEach(l=>rows.push(['Load',l.title,l.vehicle,l.origin,l.destination,l.rate,l.source]));let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}));a.download='dispatch-demo-export.csv';a.click();URL.revokeObjectURL(a.href);toast('CSV ایکسپورٹ تیار ہوگیا')}
+function resetData(){if(!confirm('تمام مقامی ڈیمو ریکارڈ مستقل طور پر مٹا دیں؟'))return;localStorage.removeItem(KEY);db={carriers:[],loads:[],matches:[],leads:[],activity:[],settings:{fee:5,business:''}};renderAll();toast('ڈیمو ڈیٹا مٹا دیا گیا')}
+function copyQuestions(){let q='What type of vehicle do you operate?\nWhat city is the vehicle in right now?\nWhat lanes or destinations do you prefer?\nWhat is your minimum rate?\nWhen are you available?\nDo you have the required insurance and operating documents?';navigator.clipboard?.writeText(q);toast('سوالات کاپی ہوگئے')}
+renderAll();
+</script>
+</body>
+</html>
